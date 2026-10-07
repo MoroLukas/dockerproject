@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Docker Lab</title>
+
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css"
+    >
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background: #0b0f14;
+            color: #f1f5f9;
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* LOGIN */
+
+        #loginPage {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            background: #111827;
+            border: 1px solid #263244;
+            border-radius: 14px;
+            padding: 32px;
+        }
+
+        .login-card h1 {
+            margin: 0 0 8px;
+        }
+
+        .login-card p {
+            color: #94a3b8;
+            margin-bottom: 28px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            color: #cbd5e1;
+            font-size: 14px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 18px;
+            background: #0b111a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: white;
+            outline: none;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #3b82f6;
+        }
+
+        button {
+            border: 0;
+            border-radius: 8px;
+            padding: 11px 16px;
+            cursor: pointer;
+            background: #2563eb;
+            color: white;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .error {
+            margin-top: 15px;
+            color: #f87171;
+            font-size: 14px;
+        }
+
+        /* APP */
+
+        #app {
+            min-height: 100vh;
+        }
+
+        header {
+            height: 64px;
+            padding: 0 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #1e293b;
+            background: #0f1720;
+        }
+
+        header strong {
+            font-size: 18px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        .logout {
+            background: #1e293b;
+        }
+
+        .logout:hover {
+            background: #334155;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: auto;
+            padding: 32px;
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .top h1 {
+            margin: 0 0 7px;
+        }
+
+        .top p {
+            margin: 0;
+            color: #94a3b8;
+        }
+
+        .create-box {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .create-box select {
+            margin: 0;
+            width: 180px;
+        }
+
+        .containers {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 18px;
+        }
+
+        .container-card {
+            background: #111827;
+            border: 1px solid #263244;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .container-card h3 {
+            margin: 0 0 12px;
+        }
+
+        .container-card p {
+            color: #94a3b8;
+            margin: 7px 0;
+            font-size: 14px;
+        }
+
+        .status {
+            display: inline-block;
+            margin-bottom: 15px;
+            padding: 4px 9px;
+            border-radius: 999px;
+            background: #064e3b;
+            color: #6ee7b7;
+            font-size: 12px;
+        }
+
+        .terminal-container {
+            position: fixed;
+            inset: 0;
+            background: #05080c;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .terminal-header {
+            height: 52px;
+            flex-shrink: 0;
+            padding: 0 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #1e293b;
+            background: #0f1720;
+        }
+
+        .terminal-header span {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        #terminal {
+            flex: 1;
+            padding: 12px;
+        }
+
+        .empty {
+            color: #64748b;
+            padding: 30px;
+            text-align: center;
+            border: 1px dashed #334155;
+            border-radius: 12px;
+        }
+
+        @media (max-width: 700px) {
+            main {
+                padding: 20px;
+            }
+
+            .top {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .create-box {
+                width: 100%;
+            }
+
+            .create-box select {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+
+<section id="loginPage">
+
+    <div class="login-card">
+
+        <h1>Docker Lab</h1>
+
+        <p>
+            Create and manage isolated Linux containers.
+        </p>
+
+        <form id="loginForm">
+
+            <label for="username">
+                Username
+            </label>
+
+            <input
+                id="username"
+                type="text"
+                placeholder="Username"
+                required
+            >
+
+            <label for="password">
+                Password
+            </label>
+
+            <input
+                id="password"
+                type="password"
+                placeholder="Password"
+                required
+            >
+
+            <button type="submit">
+                Login
+            </button>
+
+        </form>
+
+        <div id="loginError" class="error"></div>
+
+    </div>
+
+</section>
+
+
+<!-- APPLICATION -->
+
+<section id="app" class="hidden">
+
+    <header>
+
+        <strong>Docker Lab</strong>
+
+        <div class="user-info">
+
+            <span id="userInfo"></span>
+
+            <button
+                class="logout"
+                id="logoutButton"
+            >
+                Logout
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <main>
+
+        <div class="top">
+
+            <div>
+                <h1>My Containers</h1>
+
+                <p>
+                    Create and access your Linux environments.
+                </p>
+            </div>
+
+            <div class="create-box">
+
+                <select id="osSelect">
+
+                    <option value="debian">
+                        Debian
+                    </option>
+
+                    <option value="ubuntu">
+                        Ubuntu
+                    </option>
+
+                    <option value="alpine">
+                        Alpine
+                    </option>
+
+                </select>
+
+                <button id="createButton">
+                    Create
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div id="containers" class="containers"></div>
+
+    </main>
+
+</section>
+
+
+<!-- TERMINAL -->
+
+<section
+    id="terminalWindow"
+    class="terminal-container hidden"
+>
+
+    <div class="terminal-header">
+
+        <strong id="terminalTitle">
+            Terminal
+        </strong>
+
+        <span id="terminalStatus">
+            Connecting...
+        </span>
+
+        <button id="closeTerminal">
+            Close
+        </button>
+
+    </div>
+
+    <div id="terminal"></div>
+
+</section>
+
+
+<script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
+
+<script>
+
+const API = "http://localhost:3000";
+
+let token = localStorage.getItem("token");
+let currentUser = null;
+let socket = null;
+let terminal = null;
+
+
+async function restoreSession() {
+
+    if (!token) {
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            `${API}/me`,
+            {
+                headers: {
+                    Authorization:
+                        `Bearer ${token}`
+                }
+            }
+        );
+
+        if (!response.ok) {
+            localStorage.removeItem("token");
+            token = null;
+            return;
+        }
+
+        const data = await response.json();
+
+        currentUser = data.user;
+
+        showApp();
+
+    } catch (err) {
+
+        localStorage.removeItem("token");
+        token = null;
+
+    }
+}
+
+restoreSession();
+
+/* LOGIN */
+
+document
+    .getElementById("loginForm")
+    .addEventListener("submit", async (event) => {
+
+        event.preventDefault();
+
+        const username =
+            document.getElementById("username").value;
+
+        const password =
+            document.getElementById("password").value;
+
+        const error =
+            document.getElementById("loginError");
+
+        error.textContent = "";
+
+        try {
+
+            const response = await fetch(
+                `${API}/login`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        username,
+                        password
+                    })
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.error || "Login failed"
+                );
+            }
+
+            token = data.token;
+
+            localStorage.setItem(
+                "token",
+                token
+            );
+
+            currentUser = data.user;
+
+            showApp();
+
+        } catch (err) {
+
+            error.textContent = err.message;
+
+        }
+
+    });
+
+
+/* SHOW APP */
+
+function showApp() {
+
+    document
+        .getElementById("loginPage")
+        .classList.add("hidden");
+
+    document
+        .getElementById("app")
+        .classList.remove("hidden");
+
+    document
+        .getElementById("userInfo")
+        .textContent =
+            `${currentUser.username} · ${currentUser.plan}`;
+
+    loadContainers();
+}
+
+
+/* LOAD CONTAINERS */
+
+async function loadContainers() {
+
+    const response = await fetch(
+        `${API}/containers`,
+        {
+            headers: {
+                Authorization:
+                    `Bearer ${token}`
+            }
+        }
+    );
+
+    if (!response.ok) {
+        return;
+    }
+
+    const data = await response.json();
+
+    renderContainers(data.containers);
+}
+
+
+/* RENDER CONTAINERS */
+
+function renderContainers(containers) {
+
+    const element =
+        document.getElementById("containers");
+
+    element.innerHTML = "";
+
+    if (containers.length === 0) {
+
+        element.innerHTML = `
+            <div class="empty">
+                No containers yet.
+            </div>
+        `;
+
+        return;
+    }
+
+    for (const container of containers) {
+
+        const card =
+            document.createElement("div");
+
+        card.className =
+            "container-card";
+
+        card.innerHTML = `
+            <span class="status">
+                ${container.status}
+            </span>
+
+            <h3>
+                ${container.name}
+            </h3>
+
+            <p>
+                OS: ${container.os}
+            </p>
+
+            <p>
+                Created:
+                ${new Date(
+                    container.created_at
+                ).toLocaleString()}
+            </p>
+
+            <button class="terminal-button">
+                Open terminal
+            </button>
+
+            <button class="delete-button">
+                Delete
+            </button>
+        `;
+
+        const terminalButton =
+            card.querySelector(".terminal-button");
+
+        const deleteButton =
+            card.querySelector(".delete-button");
+
+        terminalButton.addEventListener(
+            "click",
+            () => openTerminal(container)
+        );
+
+        deleteButton.addEventListener(
+            "click",
+            () => deleteContainer(container.id)
+        );
+
+        element.appendChild(card);
+    }
+}
+
+async function deleteContainer(id) {
+
+    if (!confirm("Delete this container?")) {
+        return;
+    }
+
+    const button = event.currentTarget;
+
+    button.disabled = true;
+    button.textContent = "Deleting...";
+
+    try {
+
+        const response = await fetch(
+            `${API}/containers/${id}`,
+            {
+                method: "DELETE",
+
+                headers: {
+                    Authorization:
+                        `Bearer ${token}`
+                }
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(
+                data.error ||
+                "Could not delete container"
+            );
+
+            button.disabled = false;
+            button.textContent = "Delete";
+
+            return;
+        }
+
+        await loadContainers();
+
+    } catch (err) {
+
+        console.error(err);
+
+        alert("Could not delete container");
+
+        button.disabled = false;
+        button.textContent = "Delete";
+    }
+}
+
+/* CREATE CONTAINER */
+
+document
+    .getElementById("createButton")
+    .addEventListener("click", async () => {
+
+        const os =
+            document.getElementById("osSelect").value;
+
+        const button =
+            document.getElementById("createButton");
+
+        button.disabled = true;
+        button.textContent = "Creating...";
+
+        try {
+
+            const response = await fetch(
+                `${API}/containers`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+
+                        Authorization:
+                            `Bearer ${token}`
+                    },
+
+                    body: JSON.stringify({
+                        os
+                    })
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+
+                alert(
+                    data.error ||
+                    "Could not create container"
+                );
+
+                return;
+            }
+
+            await loadContainers();
+
+        } catch (err) {
+
+            alert(err.message);
+
+        } finally {
+
+            button.disabled = false;
+            button.textContent = "Create";
+
+        }
+
+    });
+
+
+/* TERMINAL */
+
+function openTerminal(container) {
+
+    const window =
+        document.getElementById("terminalWindow");
+
+    const title =
+        document.getElementById("terminalTitle");
+
+    const status =
+        document.getElementById("terminalStatus");
+
+    const terminalElement =
+        document.getElementById("terminal");
+
+    title.textContent =
+        `${container.name} · ${container.os}`;
+
+    status.textContent =
+        "Connecting...";
+
+    window.classList.remove("hidden");
+
+    terminalElement.innerHTML = "";
+
+    terminal = new Terminal({
+        cursorBlink: true,
+        fontSize: 14,
+        theme: {
+            background: "#05080c",
+            foreground: "#e2e8f0"
+        }
+    });
+
+    terminal.open(terminalElement);
+
+    const protocol =
+        location.protocol === "https:"
+            ? "wss"
+            : "ws";
+
+    socket = new WebSocket(
+        `${protocol}://localhost:3000/containers/${container.id}/terminal?token=${encodeURIComponent(token)}`
+    );
+
+    socket.binaryType =
+        "arraybuffer";
+
+    socket.onopen = () => {
+
+        status.textContent =
+            "Connected";
+
+        terminal.write(
+            `Connected to ${container.os}\r\n`
+        );
+
+    };
+
+    socket.onmessage = (event) => {
+
+        if (
+            event.data instanceof ArrayBuffer
+        ) {
+
+            terminal.write(
+                new Uint8Array(event.data)
+            );
+
+        } else {
+
+            terminal.write(
+                event.data
+            );
+
+        }
+
+    };
+
+    socket.onclose = () => {
+
+        status.textContent =
+            "Disconnected";
+
+    };
+
+    socket.onerror = () => {
+
+        status.textContent =
+            "Connection error";
+
+    };
+
+    terminal.onData((data) => {
+
+        if (
+            socket.readyState ===
+            WebSocket.OPEN
+        ) {
+
+            socket.send(data);
+
+        }
+
+    });
+
+    terminal.focus();
+}
+
+
+/* CLOSE TERMINAL */
+
+document
+    .getElementById("closeTerminal")
+    .addEventListener("click", () => {
+
+        if (socket) {
+            socket.close();
+            socket = null;
+        }
+
+        if (terminal) {
+            terminal.dispose();
+            terminal = null;
+        }
+
+        document
+            .getElementById("terminalWindow")
+            .classList.add("hidden");
+
+    });
+
+
+/* LOGOUT */
+
+document
+    .getElementById("logoutButton")
+    .addEventListener("click", async () => {
+
+        try {
+
+            await fetch(
+                `${API}/logout`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        Authorization:
+                            `Bearer ${token}`
+                    }
+                }
+            );
+
+        } catch {}
+
+        if (socket) {
+            socket.close();
+        }
+
+        localStorage.removeItem("token");
+
+        token = null;
+        currentUser = null;
+
+        document
+            .getElementById("app")
+            .classList.add("hidden");
+
+        document
+            .getElementById("loginPage")
+            .classList.remove("hidden");
+
+    });
+
+</script>
+
+</body>
+</html>
